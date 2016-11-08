@@ -70,9 +70,9 @@ if __name__ == "__main__":
 
     imdb_name = args.imdb_name
     xml_dir = os.path.join(data_dir, imdb_name, "Annotations")
-    image_sets_dir = os.path.join(data_dir, imdb_name, "ImageSets")
+    image_sets_dir = os.path.join(data_dir, imdb_name, "ImageSets", "Main")
     if not os.path.exists(image_sets_dir):
-        os.mkdir(image_sets_dir)
+        os.makedirs(image_sets_dir)
     # test_portion = args.test_portion
     val_portion = args.val_portion
 
