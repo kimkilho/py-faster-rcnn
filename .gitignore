@@ -112,3 +112,9 @@ data/sualab_skive/
 
 # Swap files
 *.swp
+
+# Output directory
+output/
+
+# Backup files
+*.bak
