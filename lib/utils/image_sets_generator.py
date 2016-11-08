@@ -24,42 +24,63 @@ def parse_args():
     return args
 
 
-def generate_image_sets(xml_dir, image_sets_dir, val_portion=None):
+def generate_image_sets(xml_dir, image_sets_dir, val_portion=0.25):
     filename_list = os.listdir(xml_dir)
 
-    print("Constructing {class, file_list} dicts from files in xml_dir..")
-    total_classes_dict = {}   # {class_name: {filename_wo_ext: int}}
-    for filename in filename_list:
-        filename_wo_ext = ''.join(filename.split('.')[:-1])
+    print("Constructing {filename, {class_name: posneg}} dicts from files in xml_dir..")
+    total_filename_classes_dict = {}   # {filename_wo_ext: {class_name: int}}
+    class_name_set = set()
+    filename_wo_ext_list = [''.join(filename.split('.')[:-1]) for filename in filename_list]
+    for filename, filename_wo_ext in zip(filename_list, filename_wo_ext_list):
+        total_filename_classes_dict[filename_wo_ext] = {}
+
         file_path = os.path.join(xml_dir, filename)
         root = etree.parse(file_path).getroot()
         object_name_elem_list = root.xpath(".//object/name")
         for object_name_elem in object_name_elem_list:
             class_name = object_name_elem.text
-            if class_name not in total_classes_dict:
-                total_classes_dict[class_name] = {}
-            total_classes_dict[class_name][filename_wo_ext] = 1
+            if class_name not in class_name_set:
+                class_name_set.add(class_name)
+            if class_name not in total_filename_classes_dict[filename_wo_ext]:
+                total_filename_classes_dict[filename_wo_ext][class_name] = 1
 
     print("Writing ImageSets txt file(s) for each class..")
-    for class_name in total_classes_dict:
-        filename_posneg_list = []
-        for filename in sorted(filename_list):
-            filename_wo_ext = ''.join(filename.split('.')[:-1])
-            if filename_wo_ext in total_classes_dict[class_name]:
-                filename_posneg_list.append("%s  1" % filename_wo_ext)
-            else:
-                filename_posneg_list.append("%s -1" % filename_wo_ext)
-        with open(os.path.join(image_sets_dir, "%s_trainval.txt" % class_name), 'w') as wf:
-            wf.writelines("%s\n" % line for line in filename_posneg_list)
+    total_size = len(filename_wo_ext_list)
+    valid_size = int(total_size * val_portion)
+    random.shuffle(filename_wo_ext_list)
+    valid_filename_wo_ext_list = sorted(filename_wo_ext_list[:valid_size])
+    train_filename_wo_ext_list = sorted(filename_wo_ext_list[valid_size:])
 
-        if val_portion:
-            total_size = len(filename_posneg_list)
-            valid_size = int(total_size * val_portion)
-            random.shuffle(filename_posneg_list)
-            with open(os.path.join(image_sets_dir, "%s_val.txt" % class_name), 'w') as wf:
-                wf.writelines("%s\n" % line for line in sorted(filename_posneg_list[:valid_size]))
-            with open(os.path.join(image_sets_dir, "%s_train.txt" % class_name), 'w') as wf:
-                wf.writelines("%s\n" % line for line in sorted(filename_posneg_list[valid_size:]))
+    # Write filename_wo_ext lists to txt file for train/valid sets
+    with open(os.path.join(image_sets_dir, "val.txt"), 'w') as fid:
+        fid.writelines("%s\n" % line for line in sorted(valid_filename_wo_ext_list))
+    with open(os.path.join(image_sets_dir, "train.txt"), 'w') as fid:
+        fid.writelines("%s\n" % line for line in sorted(train_filename_wo_ext_list))
+
+    # Write (filename_wo_ext, posneg) lists to txt file for train/valid set, for each class
+    valid_fid_dict = {}
+    train_fid_dict = {}
+    for class_name in class_name_set:
+        valid_fid_dict[class_name] = open(os.path.join(image_sets_dir, "%s_val.txt" % class_name), 'w')
+        train_fid_dict[class_name] = open(os.path.join(image_sets_dir, "%s_train.txt" % class_name), 'w')
+
+    for filename_wo_ext in valid_filename_wo_ext_list:
+        for class_name in class_name_set:
+            if class_name not in total_filename_classes_dict[filename_wo_ext]:
+                valid_fid_dict[class_name].write("%s -1\n" % filename_wo_ext)
+            else:
+                valid_fid_dict[class_name].write("%s  1\n" % filename_wo_ext)
+
+    for filename_wo_ext in train_filename_wo_ext_list:
+        for class_name in class_name_set:
+            if class_name not in total_filename_classes_dict[filename_wo_ext]:
+                train_fid_dict[class_name].write("%s -1\n" % filename_wo_ext)
+            else:
+                train_fid_dict[class_name].write("%s  1\n" % filename_wo_ext)
+
+    for class_name in class_name_set:
+        valid_fid_dict[class_name].close()
+        train_fid_dict[class_name].close()
 
     print("Done")
 
