@@ -29,6 +29,12 @@ case $DATASET in
     PT_DIR="pascal_voc"
     ITERS=40000
     ;;
+  sualab_skive)
+    TRAIN_IMDB="sualab_skive_train"
+    TEST_IMDB="sualab_skive_val"
+    PT_DIR="sualab_skive"
+    ITERS=40000
+    ;;
   coco)
     echo "Not implemented: use experiments/scripts/faster_rcnn_end2end.sh for coco"
     exit
