@@ -118,3 +118,6 @@ output/
 
 # Backup files
 *.bak
+
+# Caffe model files
+*.caffemodel
