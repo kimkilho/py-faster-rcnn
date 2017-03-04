@@ -29,10 +29,16 @@ case $DATASET in
     PT_DIR="pascal_voc"
     ITERS=40000
     ;;
-  sualab_skive)
-    TRAIN_IMDB="sualab_skive_train"
-    TEST_IMDB="sualab_skive_val"
-    PT_DIR="sualab_skive"
+  skive)
+    TRAIN_IMDB="skive_train"
+    TEST_IMDB="skive_val"
+    PT_DIR="skive"
+    ITERS=40000
+    ;;
+  ism_hero)
+    TRAIN_IMDB="ism_hero_train"
+    TEST_IMDB="ism_hero_val"
+    PT_DIR="ism_hero"
     ITERS=40000
     ;;
   coco)
@@ -59,6 +65,7 @@ time ./tools/train_faster_rcnn_alt_opt.py --gpu ${GPU_ID} \
 set +x
 NET_FINAL=`grep "Final model:" ${LOG} | awk '{print $3}'`
 set -x
+# NET_FINAL="/home/kilho/Dev/ModelZoo/Originals/py-faster-rcnn/output/faster_rcnn_alt_opt/skive_train/VGG_CNN_M_1024_faster_rcnn_final.caffemodel"
 
 time ./tools/test_net.py --gpu ${GPU_ID} \
   --def models/${PT_DIR}/${NET}/faster_rcnn_alt_opt/faster_rcnn_test.pt \

@@ -11,7 +11,8 @@ __sets = {}
 
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
-from datasets.sualab_skive import sualab_skive
+from datasets.skive import skive
+from datasets.ism_hero import ism_hero
 import numpy as np
 
 # Set up voc_<year>_<split> using selective search "fast" mode
@@ -32,10 +33,16 @@ import numpy as np
 #         name = 'coco_{}_{}'.format(year, split)
 #         __sets[name] = (lambda split=split, year=year: coco(split, year))
 
-# Set up sualab_skive_<split>
+# Set up skive_<split>
 for split in ["train", "val", "trainval"]:
-    name = "sualab_skive_{}".format(split)
-    __sets[name] = (lambda split=split: sualab_skive(split))
+    name = "skive_{}".format(split)
+    __sets[name] = (lambda split=split: skive(split))
+
+
+# Set up ism_hero_<split>
+for split in ["train", "val", "trainval"]:
+    name = "ism_hero_{}".format(split)
+    __sets[name] = (lambda split=split: ism_hero(split))
 
 
 def get_imdb(name):
