@@ -13,9 +13,9 @@ from fast_rcnn.config import cfg
 from voc_eval import voc_eval
 
 
-class sualab_skive(imdb):
+class skive(imdb):
     def __init__(self, image_set, data_path=None):
-        imdb.__init__(self, "sualab_skive_" + image_set)
+        imdb.__init__(self, "skive_" + image_set)
         self._image_set = image_set
         self._data_path = self._get_default_path() if data_path is None \
                           else data_path
@@ -76,7 +76,7 @@ class sualab_skive(imdb):
         """
         Return the default path where Sualab Skive is expected to be located at.
         """
-        return os.path.join(cfg.DATA_DIR, "sualab_skive")
+        return os.path.join(cfg.DATA_DIR, "skive")
 
     def gt_roidb(self):
         """
@@ -225,7 +225,7 @@ class sualab_skive(imdb):
             "..",
             'results',
             # 'VOC' + self._year,
-            "sualab_skive",
+            "skive",
             'Main',
             filename)
         return path
