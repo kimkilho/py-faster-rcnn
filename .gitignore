@@ -108,7 +108,12 @@ data/faster_rcnn_models/
 data/faster_rcnn_models.tgz
 
 # Sualab dataset files
-data/sualab_skive/
+data/skive/
+data/ism_hero/
+
+# Sualab model files
+models/skive/
+models/ism_hero/
 
 # Swap files
 *.swp
