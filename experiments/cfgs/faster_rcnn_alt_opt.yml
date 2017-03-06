@@ -10,9 +10,12 @@ TRAIN:
   BG_THRESH_LO: 0.0
   USE_FLIPPED: False
 
-  RPN_POSITIVE_OVERLAP: 0.5
-  RPN_NEGATIVE_OVERLAP: 0.1
-  RPN_BATCHSIZE: 64
+  RPN_POSITIVE_OVERLAP: 0.7  # (IOU >= thresh) positive example
+  RPN_NEGATIVE_OVERLAP: 0.3  # (IOU < thresh) negative example
+  RPN_FG_FRACTION: 0.5       # Portion of foreground examples (in the whole anchors)
+  RPN_BATCHSIZE: 256         # Total number of anchors in an image
+  RPN_MIN_SIZE: 16 
+# Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
 TEST:
   HAS_RPN: True
 
