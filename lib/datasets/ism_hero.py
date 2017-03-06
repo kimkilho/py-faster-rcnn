@@ -168,6 +168,7 @@ class ism_hero(imdb):
 
         return self.create_roidb_from_box_list(box_list, gt_roidb)
 
+    # NOTE:
     def _load_pascal_annotation(self, index):
         """
         Load image and bounding boxes info from XML file in the PASCAL VOC
@@ -226,14 +227,18 @@ class ism_hero(imdb):
     def _get_voc_results_file_template(self):
         # VOCdevkit/results/VOC2007/Main/<comp_id>_det_test_aeroplane.txt
         filename = self._get_comp_id() + '_det_' + self._image_set + '_{:s}.txt'
-        path = os.path.join(
-            # self._devkit_path,
+        results_dir = os.path.join(
             self._data_path,
-            "..",
+            "..", "..",
             'results',
             # 'VOC' + self._year,
             "ism_hero",
-            'Main',
+            'Main'
+        )
+        if not os.path.exists(results_dir): os.makedirs(results_dir)
+        path = os.path.join(
+            # self._devkit_path,
+            results_dir,
             filename)
         return path
 
@@ -243,17 +248,19 @@ class ism_hero(imdb):
                 continue
             print 'Writing {} VOC results file'.format(cls)
             filename = self._get_voc_results_file_template().format(cls)
+            # print(filename)
             with open(filename, 'wt') as f:
                 for im_ind, index in enumerate(self.image_index):
                     dets = all_boxes[cls_ind][im_ind]
                     if dets == []:
+                        # print("dets == []")
                         continue
                     # the VOCdevkit expects 1-based indices
                     for k in xrange(dets.shape[0]):
                         f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
                                 format(index, dets[k, -1],
-                                       dets[k, 0] + 1, dets[k, 1] + 1,
-                                       dets[k, 2] + 1, dets[k, 3] + 1))
+                                       dets[k, 0], dets[k, 1],
+                                       dets[k, 2], dets[k, 3]))
 
     def _do_python_eval(self, output_dir = 'output'):
         annopath = os.path.join(
@@ -331,8 +338,8 @@ class ism_hero(imdb):
             for cls in self._classes:
                 if cls == '__background__':
                     continue
-                filename = self._get_voc_results_file_template().format(cls)
-                os.remove(filename)
+                # filename = self._get_voc_results_file_template().format(cls)
+                # os.remove(filename)
 
     def competition_mode(self, on):
         if on:
