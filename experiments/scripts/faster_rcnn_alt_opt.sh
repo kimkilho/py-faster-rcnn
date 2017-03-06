@@ -65,7 +65,7 @@ time ./tools/train_faster_rcnn_alt_opt.py --gpu ${GPU_ID} \
 set +x
 NET_FINAL=`grep "Final model:" ${LOG} | awk '{print $3}'`
 set -x
-# NET_FINAL="/home/kilho/Dev/ModelZoo/Originals/py-faster-rcnn/output/faster_rcnn_alt_opt/skive_train/VGG_CNN_M_1024_faster_rcnn_final.caffemodel"
+# NET_FINAL="/home/kilho/Dev/ModelZoo/Originals/py-faster-rcnn/output/faster_rcnn_alt_opt/ism_hero_train/VGG_CNN_M_1024_faster_rcnn_final.caffemodel"
 
 time ./tools/test_net.py --gpu ${GPU_ID} \
   --def models/${PT_DIR}/${NET}/faster_rcnn_alt_opt/faster_rcnn_test.pt \

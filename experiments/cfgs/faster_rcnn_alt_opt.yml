@@ -1,5 +1,19 @@
 EXP_DIR: faster_rcnn_alt_opt
 TRAIN:
+  SCALES: [512,]
+  MAX_SIZE: 1024
+  IMS_PER_BATCH: 16
+  BATCH_SIZE: 256  # ROIs_per_image * num_images_per_batch => ROIs_per_image = 128/16 = 8
+  FG_FRACTION: 0.125
+  FG_THRESH: 0.25
+  BG_THRESH_HI: 0.75
   BG_THRESH_LO: 0.0
+  USE_FLIPPED: False
+
+  RPN_POSITIVE_OVERLAP: 0.5
+  RPN_NEGATIVE_OVERLAP: 0.1
+  RPN_BATCHSIZE: 64
 TEST:
   HAS_RPN: True
+
+RNG_SEED: 4

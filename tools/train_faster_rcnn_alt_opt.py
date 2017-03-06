@@ -111,7 +111,7 @@ def train_rpn(queue=None, imdb_name=None, init_model=None, solver=None,
     cfg.TRAIN.HAS_RPN = True
     cfg.TRAIN.BBOX_REG = False  # applies only to Fast R-CNN bbox regression
     cfg.TRAIN.PROPOSAL_METHOD = 'gt'
-    cfg.TRAIN.IMS_PER_BATCH = 1
+    cfg.TRAIN.IMS_PER_BATCH = 1     # NOTE: Should be set to 1 at RPN training
     print 'Init model: {}'.format(init_model)
     print('Using config:')
     pprint.pprint(cfg)
@@ -177,7 +177,7 @@ def train_fast_rcnn(queue=None, imdb_name=None, init_model=None, solver=None,
 
     cfg.TRAIN.HAS_RPN = False           # not generating prosals on-the-fly
     cfg.TRAIN.PROPOSAL_METHOD = 'rpn'   # use pre-computed RPN proposals instead
-    cfg.TRAIN.IMS_PER_BATCH = 2
+    # cfg.TRAIN.IMS_PER_BATCH = 2       # FIXME: Use the original cfg.TRAIN.IMS_PER_BATCH
     print 'Init model: {}'.format(init_model)
     print 'RPN proposals: {}'.format(rpn_file)
     print('Using config:')
