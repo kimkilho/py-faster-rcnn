@@ -8,7 +8,7 @@ TRAIN:
   FG_FRACTION: 0.25
   FG_THRESH: 0.5
   BG_THRESH_HI: 0.5
-  BG_THRESH_LO: 0.1
+  BG_THRESH_LO: 0.0
   USE_FLIPPED: False
 
   RPN_POSITIVE_OVERLAP: 0.7  # (IOU >= thresh) positive example
