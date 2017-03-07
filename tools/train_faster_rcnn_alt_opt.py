@@ -77,8 +77,8 @@ def get_solvers(net_name):
                [net_name, n, 'stage2_fast_rcnn_solver30k40k.pt']]
     solvers = [os.path.join(cfg.MODELS_DIR, *s) for s in solvers]
     # Iterations for each training stage
-    max_iters = [80000, 40000, 80000, 40000]
-    # max_iters = [100, 100, 100, 100]
+    # max_iters = [80000, 40000, 80000, 40000]
+    max_iters = [400, 200, 400, 200]
     # Test prototxt for the RPN
     rpn_test_prototxt = os.path.join(
         cfg.MODELS_DIR, net_name, n, 'rpn_test.pt')
@@ -111,7 +111,7 @@ def train_rpn(queue=None, imdb_name=None, init_model=None, solver=None,
     cfg.TRAIN.HAS_RPN = True
     cfg.TRAIN.BBOX_REG = False  # applies only to Fast R-CNN bbox regression
     cfg.TRAIN.PROPOSAL_METHOD = 'gt'
-    cfg.TRAIN.IMS_PER_BATCH = 1     # NOTE: Should be set to 1 at RPN training
+    # cfg.TRAIN.IMS_PER_BATCH = 1     # NOTE: Should be set to 1 at RPN training
     print 'Init model: {}'.format(init_model)
     print('Using config:')
     pprint.pprint(cfg)

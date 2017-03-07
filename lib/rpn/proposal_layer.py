@@ -12,8 +12,10 @@ from fast_rcnn.config import cfg
 from generate_anchors import generate_anchors
 from fast_rcnn.bbox_transform import bbox_transform_inv, clip_boxes
 from fast_rcnn.nms_wrapper import nms
+import pdb
 
 DEBUG = False
+
 
 class ProposalLayer(caffe.Layer):
     """
@@ -58,24 +60,33 @@ class ProposalLayer(caffe.Layer):
         # take after_nms_topN proposals after NMS
         # return the top proposals (-> RoIs top, scores top)
 
-        assert bottom[0].data.shape[0] == 1, \
-            'Only single item batches are supported'
+        # assert bottom[0].data.shape[0] == 1, \
+        #    'Only single item batches are supported'
 
-        cfg_key = str(self.phase) # either 'TRAIN' or 'TEST'
-        pre_nms_topN  = cfg[cfg_key].RPN_PRE_NMS_TOP_N
+        # print 'Configuration check here!';
+        cfg_key = str(self.phase)  # either 'TRAIN' or 'TEST'
+        pre_nms_topN = cfg[cfg_key].RPN_PRE_NMS_TOP_N
         post_nms_topN = cfg[cfg_key].RPN_POST_NMS_TOP_N
-        nms_thresh    = cfg[cfg_key].RPN_NMS_THRESH
-        min_size      = cfg[cfg_key].RPN_MIN_SIZE
+        nms_thresh = cfg[cfg_key].RPN_NMS_THRESH
+        min_size = cfg[cfg_key].RPN_MIN_SIZE
+        try:
+            num_imgs = cfg[cfg_key].IMS_PER_BATCH
+        except:
+            num_imgs = 1
+
+        # post_nms_topN = int(post_nms_topN/num_imgs)
+
 
         # the first set of _num_anchors channels are bg probs
         # the second set are the fg probs, which we want
         scores = bottom[0].data[:, self._num_anchors:, :, :]
         bbox_deltas = bottom[1].data
-        im_info = bottom[2].data[0, :]
+        im_info = bottom[2].data
+        # im_info = bottom[2].data[0, :]
 
         if DEBUG:
-            print 'im_size: ({}, {})'.format(im_info[0], im_info[1])
-            print 'scale: {}'.format(im_info[2])
+            print 'im_size: ({}, {})'.format(im_info[0][0], im_info[0][1])
+            print 'scale: {}'.format(im_info[0][2])
 
         # 1. Generate proposals from bbox deltas and shifted anchors
         height, width = scores.shape[-2:]
@@ -101,64 +112,84 @@ class ProposalLayer(caffe.Layer):
         anchors = self._anchors.reshape((1, A, 4)) + \
                   shifts.reshape((1, K, 4)).transpose((1, 0, 2))
         anchors = anchors.reshape((K * A, 4))
+        blob_all = [];
 
-        # Transpose and reshape predicted bbox transformations to get them
-        # into the same order as the anchors:
-        #
-        # bbox deltas will be (1, 4 * A, H, W) format
-        # transpose to (1, H, W, 4 * A)
-        # reshape to (1 * H * W * A, 4) where rows are ordered by (h, w, a)
-        # in slowest to fastest order
-        bbox_deltas = bbox_deltas.transpose((0, 2, 3, 1)).reshape((-1, 4))
+        # diggy: start
+        # print 'Check the entire loop';
+        for im_i in range(num_imgs):
+            # Transpose and reshape predicted bbox transformations to get them
+            # into the same order as the anchors:
+            #
+            # bbox deltas will be (1, 4 * A, H, W) format
+            # transpose to (1, H, W, 4 * A)
+            # reshape to (1 * H * W * A, 4) where rows are ordered by (h, w, a)
+            # in slowest to fastest order
+            bbox_deltas_i = bbox_deltas[im_i];
+            bbox_deltas_i = bbox_deltas_i.reshape(1, bbox_deltas_i.shape[0], bbox_deltas_i.shape[1],
+                                                  bbox_deltas_i.shape[2]);
+            bbox_deltas_i = bbox_deltas_i.transpose((0, 2, 3, 1)).reshape((-1, 4))
 
-        # Same story for the scores:
-        #
-        # scores are (1, A, H, W) format
-        # transpose to (1, H, W, A)
-        # reshape to (1 * H * W * A, 1) where rows are ordered by (h, w, a)
-        scores = scores.transpose((0, 2, 3, 1)).reshape((-1, 1))
+            # Same story for the scores:
+            #
+            # scores are (1, A, H, W) format
+            # transpose to (1, H, W, A)
+            # reshape to (1 * H * W * A, 1) where rows are ordered by (h, w, a)
+            scores_i = scores[im_i];
+            scores_i = scores_i.reshape(1, scores_i.shape[0], scores_i.shape[1], scores_i.shape[2]);
+            scores_i = scores_i.transpose((0, 2, 3, 1)).reshape((-1, 1))
 
-        # Convert anchors into proposals via bbox transformations
-        proposals = bbox_transform_inv(anchors, bbox_deltas)
+            # Convert anchors into proposals via bbox transformations
+            proposals = bbox_transform_inv(anchors, bbox_deltas_i)
 
-        # 2. clip predicted boxes to image
-        proposals = clip_boxes(proposals, im_info[:2])
+            # 2. clip predicted boxes to image
+            proposals = clip_boxes(proposals, im_info[im_i][:2])
 
-        # 3. remove predicted boxes with either height or width < threshold
-        # (NOTE: convert min_size to input image scale stored in im_info[2])
-        keep = _filter_boxes(proposals, min_size * im_info[2])
-        proposals = proposals[keep, :]
-        scores = scores[keep]
+            # 3. remove predicted boxes with either height or width < threshold
+            # (NOTE: convert min_size to input image scale stored in im_info[2])
+            keep = _filter_boxes(proposals, min_size * im_info[im_i][2])
+            proposals = proposals[keep, :]
+            scores_i = scores_i[keep]
 
-        # 4. sort all (proposal, score) pairs by score from highest to lowest
-        # 5. take top pre_nms_topN (e.g. 6000)
-        order = scores.ravel().argsort()[::-1]
-        if pre_nms_topN > 0:
-            order = order[:pre_nms_topN]
-        proposals = proposals[order, :]
-        scores = scores[order]
+            # 4. sort all (proposal, score) pairs by score from highest to lowest
+            # 5. take top pre_nms_topN (e.g. 6000)
+            order = scores_i.ravel().argsort()[::-1]
+            if pre_nms_topN > 0:
+                order = order[:pre_nms_topN]
+            proposals = proposals[order, :]
+            scores_i = scores_i[order]
 
-        # 6. apply nms (e.g. threshold = 0.7)
-        # 7. take after_nms_topN (e.g. 300)
-        # 8. return the top proposals (-> RoIs top)
-        keep = nms(np.hstack((proposals, scores)), nms_thresh)
-        if post_nms_topN > 0:
-            keep = keep[:post_nms_topN]
-        proposals = proposals[keep, :]
-        scores = scores[keep]
+            # 6. apply nms (e.g. threshold = 0.7)
+            # 7. take after_nms_topN (e.g. 300)
+            # 8. return the top proposals (-> RoIs top)
+            keep = nms(np.hstack((proposals, scores_i)), nms_thresh)
+            if post_nms_topN > 0:
+                keep = keep[:post_nms_topN]
+            proposals = proposals[keep, :]
+            scores_i = scores_i[keep]
 
-        # Output rois blob
-        # Our RPN implementation only supports a single input image, so all
-        # batch inds are 0
-        batch_inds = np.zeros((proposals.shape[0], 1), dtype=np.float32)
-        blob = np.hstack((batch_inds, proposals.astype(np.float32, copy=False)))
-        top[0].reshape(*(blob.shape))
-        top[0].data[...] = blob
+            # Output rois blob
+            # Our RPN implementation only supports a single input image, so all
+            # batch inds are 0
+            batch_inds = np.zeros((proposals.shape[0], 1), dtype=np.float32)
+            batch_inds[:] = im_i;
+            blob = np.hstack((batch_inds, proposals.astype(np.float32, copy=False)))
+
+            # print 'Blob copying check';
+            if blob_all == [] and blob != []:
+                blob_all = blob.copy();
+            else:
+                if blob != []:
+                    blob_all = np.vstack((blob_all, blob));
+
+        # diggy: end
+        # print 'Proposal layer: Dimensionality check';
+        top[0].reshape(*(blob_all.shape))
+        top[0].data[...] = blob_all
 
         # [Optional] output scores blob
         if len(top) > 1:
-            top[1].reshape(*(scores.shape))
-            top[1].data[...] = scores
+            top[1].reshape(*(scores_i.shape))
+            top[1].data[...] = scores_i
 
     def backward(self, top, propagate_down, bottom):
         """This layer does not propagate gradients."""
@@ -167,6 +198,7 @@ class ProposalLayer(caffe.Layer):
     def reshape(self, bottom, top):
         """Reshaping happens during the call to forward."""
         pass
+
 
 def _filter_boxes(boxes, min_size):
     """Remove all boxes with any side smaller than min_size."""

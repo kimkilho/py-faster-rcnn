@@ -1,13 +1,14 @@
+MODELS_DIR: "/home/kilho/Dev/ModelZoo/Originals/py-faster-rcnn/models/ism_hero"
 EXP_DIR: faster_rcnn_alt_opt
 TRAIN:
   SCALES: [512,]
-  MAX_SIZE: 1024
+  MAX_SIZE: 512
   IMS_PER_BATCH: 16
   BATCH_SIZE: 256  # ROIs_per_image * num_images_per_batch => ROIs_per_image = 128/16 = 8
-  FG_FRACTION: 0.125
-  FG_THRESH: 0.25
-  BG_THRESH_HI: 0.75
-  BG_THRESH_LO: 0.0
+  FG_FRACTION: 0.25
+  FG_THRESH: 0.5
+  BG_THRESH_HI: 0.5
+  BG_THRESH_LO: 0.1
   USE_FLIPPED: False
 
   RPN_POSITIVE_OVERLAP: 0.7  # (IOU >= thresh) positive example
@@ -17,6 +18,8 @@ TRAIN:
   RPN_MIN_SIZE: 16 
 # Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
 TEST:
+  SCALES: [512,]
+  MAX_SIZE: 512
   HAS_RPN: True
 
-RNG_SEED: 4
+RNG_SEED: 5

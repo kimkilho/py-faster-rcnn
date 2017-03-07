@@ -16,6 +16,8 @@ from roi_data_layer.minibatch import get_minibatch
 import numpy as np
 import yaml
 from multiprocessing import Process, Queue
+import pdb
+
 
 class RoIDataLayer(caffe.Layer):
     """Fast R-CNN data layer used for training."""
@@ -49,6 +51,26 @@ class RoIDataLayer(caffe.Layer):
         self._cur += cfg.TRAIN.IMS_PER_BATCH
         return db_inds
 
+    # all_inds = []; curr_indx = self._cur;
+    # pdb.set_trace();
+    # while len(all_inds) <= cfg.TRAIN.IMS_PER_BATCH:
+    #	if len(all_inds) == cfg.TRAIN.IMS_PER_BATCH:
+    #		break;
+    #	print 'iGNORE FLAG ' + str(self._roidb[curr_indx]['ignore_flag']);
+    #	if self._roidb[curr_indx]['ignore_flag'] == 1:
+    #		print 'gotta ignore this shit!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    #		pdb.set_trace();
+
+    #	if self._roidb[curr_indx]['ignore_flag'] == 0:
+    #		all_inds.append(curr_indx);
+    #		curr_indx += 1;
+
+    # db_inds = self._perm[self._cur:self._cur + cfg.TRAIN.IMS_PER_BATCH]
+    # db_inds = self._perm[all_inds]
+
+    # self._cur = curr_indx;
+    # return db_inds
+
     def _get_next_minibatch(self):
         """Return the blobs to be used for the next minibatch.
 
@@ -72,11 +94,13 @@ class RoIDataLayer(caffe.Layer):
                                                  self._roidb,
                                                  self._num_classes)
             self._prefetch_process.start()
+
             # Terminate the child process when the parent exists
             def cleanup():
                 print 'Terminating BlobFetcher'
                 self._prefetch_process.terminate()
                 self._prefetch_process.join()
+
             import atexit
             atexit.register(cleanup)
 
@@ -93,7 +117,7 @@ class RoIDataLayer(caffe.Layer):
         # data blob: holds a batch of N images, each with 3 channels
         idx = 0
         top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
-            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+                         max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
         self._name_to_top_map['data'] = idx
         idx += 1
 
@@ -105,7 +129,11 @@ class RoIDataLayer(caffe.Layer):
             top[idx].reshape(1, 4)
             self._name_to_top_map['gt_boxes'] = idx
             idx += 1
-        else: # not using RPN
+
+            top[idx].reshape(1)
+            self._name_to_top_map['im_inds'] = idx
+            idx += 1
+        else:  # not using RPN
             # rois blob: holds R regions of interest, each is a 5-tuple
             # (n, x1, y1, x2, y2) specifying an image batch index n and a
             # rectangle (x1, y1, x2, y2)
@@ -125,7 +153,6 @@ class RoIDataLayer(caffe.Layer):
                 top[idx].reshape(1, self._num_classes * 4)
                 self._name_to_top_map['bbox_targets'] = idx
                 idx += 1
-
                 # bbox_inside_weights blob: At most 4 targets per roi are active;
                 # thisbinary vector sepcifies the subset of active targets
                 top[idx].reshape(1, self._num_classes * 4)
@@ -158,8 +185,10 @@ class RoIDataLayer(caffe.Layer):
         """Reshaping happens during the call to forward."""
         pass
 
+
 class BlobFetcher(Process):
     """Experimental class for prefetching blobs in a separate process."""
+
     def __init__(self, queue, roidb, num_classes):
         super(BlobFetcher, self).__init__()
         self._queue = queue
@@ -182,7 +211,6 @@ class BlobFetcher(Process):
         # TODO(rbg): remove duplicated code
         if self._cur + cfg.TRAIN.IMS_PER_BATCH >= len(self._roidb):
             self._shuffle_roidb_inds()
-
         db_inds = self._perm[self._cur:self._cur + cfg.TRAIN.IMS_PER_BATCH]
         self._cur += cfg.TRAIN.IMS_PER_BATCH
         return db_inds
