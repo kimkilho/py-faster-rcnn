@@ -111,10 +111,6 @@ data/faster_rcnn_models.tgz
 data/skive/
 data/ism_hero/
 
-# Sualab model files
-models/skive/
-models/ism_hero/
-
 # Swap files
 *.swp
 
